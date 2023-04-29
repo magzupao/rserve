@@ -1,0 +1,135 @@
+# se instala el contenedor
+
+docker pull rexyai/restrserve
+
+docker run --name rserve1 -p 8090:8090 -d rexyai/restrserve
+
+#se ejecuta un programa, se ingresa al contenedor
+docker container exec -u root -it rserve bash
+
+#se inicia el entorno
+cd home/
+R
+
+#primer ejemplo
+library(RestRserve)
+app = Application$new()
+ 
+app$add_get(
+  path = "/health", 
+  FUN = function(.req, .res) {
+    .res$set_body("OK")
+  })
+ 
+app$add_post(
+  path = "/addone", 
+  FUN = function(.req, .res) {
+    result = list(x = .req$body$x + 1L)
+    .res$set_content_type("application/json")
+    .res$set_body(result)
+  })
+
+backend = BackendRserve$new()
+backend$start(app, http_port = 8090)
+
+#se invoca desde fuera del contenedor
+curl http://172.17.0.1:8090/health    --respuesta OK
+curl -H "Content-Type: application/json" -d '{"x":10}' localhost:8080/addone
+
+#segundo ejemplo
+ library(RestRserve)
+ app1 = Application$new()
+ 
+ calc_fib = function(n) {
+   if (n < 0L) stop("n should be = 0")
+   if (n == 0L) return(0L)
+   if (n == 1L || n == 2L) return(1L)
+   x = rep(1L, n)
+   
+   for (i in 3L:n) {
+    x[[i]] = x[[i - 1]]  x[[i - 2]] 
+   }
+   
+   return(x[[n]])
+ }
+ 
+ fib_handler = function(.req, .res) {
+   n = as.integer(.req$parameters_query[["n"]])
+   if (length(n) == 0L || is.na(n)) {
+     raise(HTTPError$bad_request())
+   }
+   .res$set_body(as.character(calc_fib(n)))
+   .res$set_content_type("application/json")
+ }
+ 
+ app1$add_get(path = "/fib", FUN = fib_handler)
+ 
+ backend = BackendRserve$new()
+ backend$start(app1, http_port = 8090)
+
+#se invoca desde afuera del contenedor
+curl http://localhost:8090/fib?n=10    --respuesta 55
+
+
+*************************************************************** PRUEBAS ************************************************
+
+library(RestRserve)
+app4 = Application$new()
+ 
+app4$add_get(
+  path = "/health", 
+  FUN = function(.req, .res) {
+    .res$set_body("OK")
+  })
+ 
+app4$add_post(
+  path = "/addone", 
+  FUN = function(.req, .res) {
+    calcula <-function(.req){
+          sexo <- .req$body$sexo
+          altura <- .req$body$altura
+          peso <- .req$body$peso
+          edad <- .req$body$edad
+          if(sexo=="mujer"){ 655 + (9.6 * peso) + (1.8 * altura) - (4.7 * edad)
+          }else{ 66 + (13.7 * peso) + (5 * altura) - (6.8 * edad) }
+         }
+     result <- calcula(.req)
+    .res$set_content_type("application/json")
+    .res$set_body(result)
+  })
+
+backend = BackendRserve$new()
+backend$start(app4, http_port = 8090)
+
+#se invoca desde fuera del contenedor
+curl http://172.17.0.1:8090/health    --respuesta OK
+curl -H "Content-Type: application/json" -d '{"x":10}' localhost:8080/addone
+
+curl -H "Content-Type: application/json" -d '{"sexo":"mujer","peso":"75","altura":"1.75","edad":"55"}' localhost:8080/addone
+
+TMB<-function(Sexo,Altura,Peso,Edad){
++     if(Sexo=="mujer"){ 655 + (9.6 * Peso) + (1.8 * Altura) - (4.7 * Edad)
++     }else{ 66 + (13.7 * Peso) + (5 * Altura) - (6.8 * Edad) }
++ }
+
+
+     result <-function(a, b){
+           sexo <- "mujer"
+           altura <- 1.75
+           peso <- 80
+           edad <- 55
+           if(sexo=="mujer"){ 655 + (9.6 * peso) + (1.8 * altura) - (4.7 * edad)
+           }else{ 66 + (13.7 * peso) + (5 * altura) - (6.8 * edad) }
+          }
+
+
+
+
+
+
+
+
+
+
+
+
